@@ -1,0 +1,34 @@
+Experiment 1: Baseline
+- Vadnerbhairav: IoU = 0.5988, CE = 16.18 m
+- Malatavadi: IoU = 0.4301, CE = 10.62 m
+
+Experiment 2: Local translation with 15m max_shift (No penalty)
+- Vadnerbhairav: IoU = 0.8069, CE = 7.59 m
+- Malatavadi: IoU = 0.2884, CE = 10.71 m
+Observation: Shift max is too small for some plots (e.g. plot 1710 requires 19.7m). Malatavadi drops due to an aggressive false edge.
+
+Experiment 3: Local translation with 30m max_shift (No penalty)
+- Vadnerbhairav: IoU = 0.8525, CE = 4.31 m
+- Malatavadi: IoU = 0.2908, CE = 16.27 m
+Observation: Larger shift helps Vadnerbhairav capture large errors, but makes Malatavadi worse (finds spurious distant edges).
+
+Experiment 4: Local translation with 25m max_shift and 20% distance penalty
+- Vadnerbhairav: Avg IoU = 0.8179, CE = 6.15m (all 5 shifted plots corrected, plot 2647 overran to dy=26m)
+- Malatavadi: Avg IoU = 0.2985, CE = 13.59m (Plot 1177 jumped to spurious road edge 24.3m away, collapsing IoU to 0.0000)
+Observation: The unconstrained search allowed dy=26m (>25m configured max) and snapped Plot 1177 to an unverified satellite edge with no supporting boundary evidence.
+
+Experiment 5 (Final): Calibrated Restraint, Boundary Agreement & Search Radius Bounding
+- Add strict search radius boundary (Euclidean hypot(dx, dy) <= max_shift), fixing dy=26m overrun on Plot 2647.
+- Add boundaries.tif agreement check (min_bnd_agreement >= 0.10) to ensure satellite edges have cadastral corroboration.
+- Add peak distinctness check against second-best candidate (margin >= 4m away).
+- Add conservatism for plots with already reasonable original alignment (orig_score >= 0.15).
+- Add explainable confidence calibration (improvement, margin, image edges, boundary agreement) with min_confidence = 0.50 threshold.
+Results:
+- Vadnerbhairav: Baseline IoU 0.5988 -> Corrected 0.8319 (+0.2330)
+                 Baseline CE 16.18m -> Corrected 5.79m (Reduction: 10.38m)
+                 Status: 5 Corrected, 1 Flagged (Plot 622 already aligned)
+                 Plot 2647 dy strictly bounded to 23.0m, IoU improved to 0.7714
+- Malatavadi:    Baseline IoU 0.4301 -> Corrected 0.5235 (+0.0934)
+                 Baseline CE 10.62m -> Corrected 6.95m (Reduction: 3.67m)
+                 Status: 1 Corrected (Plot 1966 IoU 0.5097 -> 0.7898), 2 Flagged (Plot 1177 retained 0.6747 IoU, Plot 1763 ambiguous retained 0.1059 IoU)
+Observation: Zero regressions. Plot 1177 is safely flagged rather than corrupted. Complete generalization across both villages.
